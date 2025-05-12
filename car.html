@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Car Photo Tracker</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f5f7fa;
+      padding: 30px;
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    form {
+      max-width: 500px;
+      margin: 0 auto;
+      background: #ffffff;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    label {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: bold;
+    }
+
+    input[type="text"],
+    select,
+    input[type="date"],
+    textarea {
+      width: 100%;
+      padding: 8px;
+      margin-bottom: 15px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      box-sizing: border-box;
+    }
+
+    button {
+      background-color: #007BFF;
+      color: white;
+      padding: 10px 16px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+
+    .entry {
+      max-width: 600px;
+      margin: 10px auto;
+      background: #ffffff;
+      padding: 12px 20px;
+      border-radius: 8px;
+      box-shadow: 0 1px 6px rgba(0,0,0,0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .entry-info {
+      flex: 1;
+    }
+
+    .delete-btn {
+      background-color: #e74c3c;
+      padding: 6px 12px;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .delete-btn:hover {
+      background-color: #c0392b;
+    }
+
+    #searchInput {
+      max-width: 500px;
+      margin: 20px auto;
+      display: block;
+      padding: 10px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      font-size: 16px;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>Car Photo Tracker</h2>
+
+  <form id="carForm">
+    <label for="stockNumber">Stock Number:</label>
+    <input type="text" id="stockNumber" name="stockNumber" required>
+
+    <label for="photoStatus">Photo Status:</label>
+    <select id="photoStatus" name="photoStatus" required>
+      <option value="">Select</option>
+      <option value="Full Photos">Full Photos</option>
+      <option value="Half Photos">Half Photos</option>
+      <option value="Not Taken">Not Taken</option>
+    </select>
+
+    <label for="detailed">Detailed:</label>
+    <select id="detailed" name="detailed" required>
+      <option value="">Select</option>
+      <option value="Yes">Yes</option>
+      <option value="No">No</option>
+    </select>
+
+    <label for="dateCompleted">Date of Completion:</label>
+    <input type="date" id="dateCompleted" name="dateCompleted" required>
+
+    <label for="comments">Comments:</label>
+    <textarea id="comments" name="comments" rows="2"></textarea>
+
+    <button type="submit">Save Entry</button>
+  </form>
+
+  <input type="text" id="searchInput" placeholder="Search by Stock Number...">
+
+  <div id="entryList"></div>
+
+  <script>
+    const form = document.getElementById("carForm");
+    const entryList = document.getElementById("entryList");
+    const searchInput = document.getElementById("searchInput");
+
+    let entries = JSON.parse(localStorage.getItem("carEntries")) || [];
+
+    function renderEntries(filter = "") {
+      entryList.innerHTML = "";
+      entries.forEach((entry, index) => {
+        if (entry.stockNumber.toLowerCase().includes(filter.toLowerCase())) {
+          const div = document.createElement("div");
+          div.className = "entry";
+
+          div.innerHTML = `
+            <div class="entry-info">
+              <strong>${entry.stockNumber}</strong> |
+              Photo: ${entry.photoStatus} |
+              Detailed: ${entry.detailed} |
+              Date: ${entry.dateCompleted} |
+              Comments: ${entry.comments}
+            </div>
+            <button class="delete-btn" onclick="deleteEntry(${index})">Delete</button>
+          `;
+
+          entryList.appendChild(div);
+        }
+      });
+    }
+
+    function deleteEntry(index) {
+      entries.splice(index, 1);
+      localStorage.setItem("carEntries", JSON.stringify(entries));
+      renderEntries(searchInput.value);
+    }
+
+    form.addEventListener("submit", function (e) {
+      e.preventDefault();
+
+      const entry = {
+        stockNumber: form.stockNumber.value.trim(),
+        photoStatus: form.photoStatus.value,
+        detailed: form.detailed.value,
+        dateCompleted: form.dateCompleted.value,
+        comments: form.comments.value.trim()
+      };
+
+      entries.push(entry);
+      localStorage.setItem("carEntries", JSON.stringify(entries));
+      renderEntries(searchInput.value);
+      form.reset();
+
+      // Send to Google Sheets (optional)
+      fetch("YOUR_GOOGLE_APPS_SCRIPT_URL", {
+        method: "POST",
+        body: JSON.stringify(entry),
+        headers: {
+          "Content-Type": "application/json"
+        }
+      }).then(res => res.text())
+        .then(data => console.log("Sent to Sheets:", data))
+        .catch(err => console.error("Error sending to Sheets:", err));
+    });
+
+    searchInput.addEventListener("input", () => {
+      renderEntries(searchInput.value);
+    });
+
+    renderEntries();
+  </script>
+</body>
+</html>
